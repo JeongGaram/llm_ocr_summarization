@@ -1,0 +1,14 @@
+SMMARIZATION_INSTRUCTION = "<문서>를 2~3 문장으로 간략하게 요약해주세요"
+SMMARIZATION_MAX_TOKEN_NUM = 3000
+SMMARIZATION_TOTAL_STOP = 3
+
+GENERATE_INSTRUCTION = "<문서>를 참고하여 <Form>과 동일한 형식의 서론을 작성해주세요"
+GENERATE_FORM = "<Form>과학기술정보통신부(장관 , 이하 ‘과기정통부’)는 <내용> 밝혔다</Form>"
+
+
+CHUNK_SIZE = 5000
+CHUNK_OVERLAP_SIZE  = 500
+TEMPERATURE = 0.5
+TOP_P = 0.95
+GENERATE_MAX_TOKEN = 1024
+
