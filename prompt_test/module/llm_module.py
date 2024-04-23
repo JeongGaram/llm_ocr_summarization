@@ -154,6 +154,8 @@ class LLM_Module :
                         chunk_texts.append(summary_list[i+1][1])  
                     else :
                         chunk_texts.append(summary_list[i][1] + summary_list[i+1][1])  
+                        
+            chunk_list = chunk_texts
         
         return summary_doc
     
