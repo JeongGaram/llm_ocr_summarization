@@ -20,7 +20,7 @@ from vllm.utils import random_uuid
 from transformers import AutoTokenizer
 from langchain_text_splitters import TokenTextSplitter
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 TIMEOUT_KEEP_ALIVE = 5  # seconds.
 app = FastAPI()
 engine = None
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument("--root-path", type=str, default=None, help="FastAPI root_path when app is behind a path based routing proxy")    
     args = parser.parse_args()
             
-    engine_args = AsyncEngineArgs(model=args.model_path, max_model_len=args.max_model_len, dtype="bfloat16")    
+    engine_args = AsyncEngineArgs(model=args.model_path, max_model_len=args.max_model_len, dtype="float16")    
     engine = AsyncLLMEngine.from_engine_args(engine_args)
     #TODO : 비동기 토크나이저로 변경해야함.
     #허깅페이스 찾아봐야할듯..?

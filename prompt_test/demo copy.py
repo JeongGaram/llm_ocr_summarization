@@ -32,14 +32,6 @@ from config.llm_option import (
 )
 
 
-def file_type_layout() : 
-    with gr.Row() :
-        with gr.Column(scale=2):                            
-                    gr.Markdown("#### 파일 종류 선택")
-                    file_type = gr.Radio(choices=["기사", "회의록", "보고서", "관리문서"], label="파일 종류")
-    return file_type
-
-
 def file_list_layout() : 
     with gr.Row() :
         with gr.Column(scale=2):                            
@@ -115,7 +107,7 @@ def summary_layout(document, chunk_text) :
         with gr.Column(scale=1):
             set_summary_option_btn = gr.Button(value="요약 모듈 옵션 변경", interactive=True)
     
-    gr.Markdown("## Result")
+    gr.Markdown("### Result")
     gr.Markdown("#### Summary Token num")
     with gr.Row():
         summary_token_num = gr.Textbox(value="", container=False, interactive=False, lines=1, max_lines=1, autoscroll=True)
@@ -206,7 +198,6 @@ def prompt_test_layout(summary_document, chunk_text) :
 
 def build_demo() :    
     with gr.Blocks() as demo :    
-        file_type = file_type_layout()
         data, file_name, char_num, token_num, document = file_list_layout()
         
         chunk_text = chunk_layout(document)
