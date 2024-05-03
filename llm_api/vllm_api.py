@@ -20,7 +20,7 @@ from vllm.utils import random_uuid
 from transformers import AutoTokenizer
 from langchain_text_splitters import TokenTextSplitter
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 TIMEOUT_KEEP_ALIVE = 5  # seconds.
 app = FastAPI()
 engine = None
@@ -97,7 +97,7 @@ async def generate(request: Request) -> Response:
         async for request_output in results_generator:
             prompt = request_output.prompt
             text_outputs = [
-                prompt + output.text for output in request_output.outputs
+                output.text for output in request_output.outputs
             ]
             ret = {"text": text_outputs}
             yield (json.dumps(ret) + "\0").encode("utf-8")
@@ -126,7 +126,7 @@ async def generate(request: Request) -> Response:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default="11182")
+    parser.add_argument("--port", type=int, default="6712")
     parser.add_argument("--model_path", type=str, default="/home/0_models/google-gemma-1.1-7b-it")
     parser.add_argument("--max_model_len", type=int, default=4096)
     parser.add_argument("--splitter_chunk_size", type=int, default=5000)

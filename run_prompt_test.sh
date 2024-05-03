@@ -1,2 +1,2 @@
-python ./prompt_test/demo.py --port 11181 
+python ./prompt_test/demo.py --port 6711
  

@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=11181)
     parser.add_argument("--model-url",
                         type=str,
-                        default="http://10.10.20.24:11182/gemma-generate")
+                        default="http://10.10.20.23:6711/gemma-generate")
     args = parser.parse_args()
 
     demo = build_demo()

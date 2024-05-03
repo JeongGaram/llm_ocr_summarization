@@ -10,6 +10,18 @@ from config.llm_url import (
     CHUNK_URL, 
     SET_SPLITTER_URL
 )
+from config.path import EXAMPLE_FILE_PATH
+
+from langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain
+from langchain_text_splitters import CharacterTextSplitter
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.llm import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain_community.llms import HuggingFaceEndpoint 
+import os
+from langchain_community.document_loaders import UnstructuredPDFLoader
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 
 class LLM_Module :
@@ -21,7 +33,6 @@ class LLM_Module :
                 data=json.dumps({"input_text" : input_text})
                 )
         data_dict = eval(response.text)
-        #{"token_num" : len(token_list), "token_list" : token_list}
         data_dict["text"] = input_text
         
         return data_dict
@@ -39,7 +50,6 @@ class LLM_Module :
                 url=SET_SPLITTER_URL,
                 data=json.dumps({"chunk_size" : chunk_size, "chunk_overlap" : chunk_overlap})
                 )
-        print(response.text)
         return response.text
     
     
@@ -116,48 +126,98 @@ class LLM_Module :
     @classmethod
     def summary_module(        
             cls,
-            summary_instruction : str,
-            ori_doc : str,
-            chunks : Union[list, str],
+            map_template : str,
+            reduce_template : str,
+            file_name : str,
+            file_type : str,
             summary_max_token_num : int,
-            summary_total_step : int,
-            params_dict : dict
+            params_dict : dict,
+            chunk_size : int,
+            chunk_overlap : int,
+            file_input: str
         ) :
+        def txt_to_pdf(txt_file_path, pdf_file_path):
+            c = canvas.Canvas(pdf_file_path, pagesize=letter)
+            width, height = letter 
+            
+            with open(txt_file_path, 'r') as file:
+                lines = file.readlines()
+
+            y_position = height - 72  
+            for line in lines:
+                c.drawString(72, y_position, line.strip())  
+                y_position -= 12  
+
+                if y_position < 72:
+                    c.showPage()  
+                    y_position = height - 72  
+
+            c.save()
+        
+        # map
+        os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
+        repo_id = "google/gemma-1.1-7b-it"
+        llm = HuggingFaceEndpoint(
+            repo_id=repo_id, max_length=params_dict["max_tokens"], temperature=params_dict["temperature"]
+        ) 
+        
+        
+        map_prompt = PromptTemplate.from_template(map_template)
+        map_chain = LLMChain(llm=llm, prompt=map_prompt)
+        reduce_prompt = PromptTemplate.from_template(reduce_template)
+        reduce_chain = LLMChain(llm=llm, prompt=reduce_prompt)
+
+
+        combine_documents_chain = StuffDocumentsChain(
+            llm_chain=reduce_chain, document_variable_name="docs"
+        )
+
+        reduce_documents_chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_documents_chain,
+            collapse_documents_chain=combine_documents_chain,
+            token_max=summary_max_token_num,
+        )
+
+
+        map_reduce_chain = MapReduceDocumentsChain(
+            llm_chain=map_chain,
+            reduce_documents_chain=reduce_documents_chain,
+            document_variable_name="docs",
+            return_intermediate_steps=False,
+        )
+
+        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+
+        if file_input==None:
+            if file_name[-3:] == "pdf":
+                document_path = os.path.join(EXAMPLE_FILE_PATH, file_type, file_name)
+                loader = UnstructuredPDFLoader(document_path)
+                doc = loader.load() 
+            elif file_name[-3:] == "txt":
+                document_path = os.path.join(EXAMPLE_FILE_PATH, "custom_text.txt")
+                txt_to_pdf(document_path, document_path.replace("txt","pdf"))
+                loader = UnstructuredPDFLoader(document_path.replace("txt","pdf"))
+                doc = loader.load() 
+        
+        else:
+            file_name = file_input.split("/")[-1]
+            document_path = file_input 
+            
+            if file_name[-3:] == "pdf":
+                loader = UnstructuredPDFLoader(document_path)
+                doc = loader.load() 
                 
-        chunk_list = chunks.split("\n\n")
-        chunk_token = LLM_Module.get_token_num(ori_doc)["token_num"]
-        if chunk_token < summary_max_token_num :                
-            return ori_doc
-        
-        summary_step_num = 0            
-        while True :
-            #make summary
-            summary_list, summary_doc = cls.make_chunk_summary(summary_instruction, chunk_list, params_dict)            
-            summary_step_num += 1            
-            #summary_doc_token_num
-            token_num = cls.get_token_num(summary_doc)["token_num"]
-            if token_num <= summary_max_token_num or summary_step_num == summary_total_step  : 
-                break
-                                        
-            #new chunk_texts
-            #concat summary list ele
-            chunk_texts = []
-            # 리스트의 각 요소에 대해 반복, 2개 단위로 짝을 지어 처리
-            for i in range(0, len(summary_list), 2):
-                # 인접한 두 요소를 연결
-                if i+1 >= len(summary_list) :
-                    chunk_texts.append(summary_list[-1][1])
-                else :
-                    token_num = cls.get_token_num(summary_list[i][1] + summary_list[i+1][1])["token_num"]
-                    if token_num >= summary_max_token_num :
-                        chunk_texts.append(summary_list[i][1])  
-                        chunk_texts.append(summary_list[i+1][1])  
-                    else :
-                        chunk_texts.append(summary_list[i][1] + summary_list[i+1][1])  
+            elif file_name[-3:] == "txt":
+                txt_to_pdf(document_path, document_path.replace("txt","pdf"))
+                loader = UnstructuredPDFLoader(document_path.replace("txt","pdf"))
+                doc = loader.load() 
                         
-            chunk_list = chunk_texts
+        split_texts = text_splitter.split_documents(doc)
+        summary = map_reduce_chain.run(split_texts)
         
-        return summary_doc
+        return summary
     
     
     @classmethod

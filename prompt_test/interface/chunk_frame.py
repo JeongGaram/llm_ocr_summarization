@@ -26,5 +26,4 @@ def get_chunk(input_text) :
         
         chunk_info_data += str(i) + " - chunk \n char_num : " + str(len(chunk_text)) +"\n token_num : " + str(token_num) +"\n\n"        
         chunk_data += chunk_text + "\n\n"
-    print(chunk_data)
-    return gr.Textbox(value=chunk_info_data), gr.Textbox(value=chunk_data)
+    return chunk_data
