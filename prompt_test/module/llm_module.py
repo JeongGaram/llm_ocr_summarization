@@ -155,7 +155,7 @@ class LLM_Module :
             c.save()
         
         # map
-        os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
+        os.environ["HUGGINGFACEHUB_API_TOKEN"] = "hugging_face_token"
         repo_id = "google/gemma-1.1-7b-it"
         llm = HuggingFaceEndpoint(
             repo_id=repo_id, max_length=params_dict["max_tokens"], temperature=params_dict["temperature"]
